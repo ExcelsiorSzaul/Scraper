@@ -1,7 +1,3 @@
-# Scraper
-
-This is a personal project I'm rewriting to enhance my programming skills, building on a program I created to address a workplace issue. The project is a work in progress, now incorporating a database for improved functionality. I'm thrilled with the progress so far!
-
 ## Scripts Overview
 
 ### `database.py`
