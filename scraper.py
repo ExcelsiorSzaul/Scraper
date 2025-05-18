@@ -1,6 +1,5 @@
-import database
+import database as db
 import re
-from bs4 import BeautifulSoup as bs
 from playwright.sync_api import sync_playwright as pw
 
 class Scraper:
@@ -15,7 +14,7 @@ class Scraper:
             page.goto(self.URL)
             page.wait_for_timeout(1000)
 
-            items = database.make_parts_list()
+            items = db.make_parts_list()
 
             for item in items:
                 mpn = item['MPN']
@@ -50,15 +49,15 @@ class Scraper:
                 else:
                     print(f"Part {mpn} not found or no info available.")
             
-            for result in results:
-                try:
-                    database.update_part(
-                        mpn=result["mpn"],
-                        in_stock=1 if result["in_stock"] else 0 if result["in_stock"] is not None else None,
-                        price=result["price"],
-                        new_mpn=result["current_mpn"] if result["current_mpn"] != result["mpn"] else None
-                    )
-                except Exception as e:
+        for result in results:
+            try:
+                db.update_part(
+                    mpn=result["mpn"],
+                    in_stock=1 if result["in_stock"] else 0 if result["in_stock"] is not None else None,
+                    price=result["price"],
+                    new_mpn=result["current_mpn"] if result["current_mpn"] != result["mpn"] else None
+                )
+            except Exception as e:
                     print(f"Failed to update part {result['mpn']}: {str(e)}")
 
     def get_part_info(self, page, mpn):            
@@ -72,20 +71,27 @@ class Scraper:
 
             for row in rows:
                 part_num_cell = row.locator("td.partNum")
-
-                primary_mpn = part_num_cell.locator("span").first.inner_text().strip()
+                try:
+                    primary_mpn = part_num_cell.locator("span").first.inner_text().strip()
+                except Exception as e:
+                    print(f'Failed to get primary MPN: {str(e)}')
+                    continue
 
                 replaced_mpn = None
-                replaced_text = part_num_cell.locator('p').inner_text().strip()
-                if replaced_text and "replaces part #" in replaced_text:
-                    match = re.search(r'replaces part #\s*([\w-]+)', replaced_text)
-                    if match:
-                        replaced_mpn = match.group(1)
+                try:
+                    second_span = part_num_cell.locator("span").nth(1)
+                    replaced_text = part_num_cell.locator('p').inner_text(timeout=1000).strip()
+                    if replaced_text and "replaces part #" in replaced_text:
+                        match = re.search(r'replaces part #\s*([\w-]+)', replaced_text)
+                        if match:
+                            replaced_mpn = match.group(1)
+                except Exception as e:
+                    replaced_mpn = None
                 
                 if mpn == primary_mpn or mpn == replaced_mpn:
-                    in_stock_text = row.locator("td.status").inner_text().strip()
-                    msrp_text = row.locator("td.regPrice").inner_text().strip()
-                    our_price_text = row.locator("td.ourPrice").inner_text().strip()
+                    in_stock_text = row.locator("td.status").inner_text(timeout=1000).strip()
+                    msrp_text = row.locator("td.regPrice").inner_text(timeout=1000).strip()
+                    our_price_text = row.locator("td.ourPrice").inner_text(timeout=1000).strip()
 
                     in_stock = "In-Stock" in in_stock_text
 

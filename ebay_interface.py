@@ -57,6 +57,7 @@ class EbayAPIInterface:
                 update_list.append((part_id, total))
                 print(f"ItemID: {part_id}, MPN: {mpn}, RM Price: {rm_price}\n eBay Price: {our_price}\n New Price: {total}")
 
+        print('Finished Update List')
         return update_list
 
 
@@ -107,6 +108,8 @@ class EbayAPIInterface:
                 api = None
                 errorlist.append(itemID)
                 continue
+        
+        print("Finished updating eBay listings.")
 
         if errorlist:
             print()
@@ -219,6 +222,7 @@ class EbayAPIInterface:
             except Exception as e:
                 print(f"Failed to update ID for MPN {mpn}: {str(e)}")
                 continue
+        print("IDs updated successfully.")
 
 
 if __name__ == "__main__":
